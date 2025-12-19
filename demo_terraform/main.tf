@@ -1,3 +1,5 @@
+
+# Backend service container deployment
 terraform {
   required_version = ">= 1.0" # version of terraform
   required_providers {
@@ -26,4 +28,44 @@ resource "docker_container" "backend" {
 
   restart = "unless-stopped" # auto-restart if container crasher
 
+}
+
+# PostgreSQL database container deployment
+# Existing terraform and provider blocks...
+# Existing docker_image.backend_app resource...
+# Existing docker_container.backend resource...
+
+# PostgreSQL Image
+resource "docker_image" "postgres" {
+  name         = var.postgres_image
+  keep_locally = false
+}
+
+# PostgreSQL Volume (for data persistence)
+resource "docker_volume" "postgres_data" {
+  name = "postgres_data"
+}
+
+# PostgreSQL Container
+resource "docker_container" "postgres" {
+  image = docker_image.postgres.name
+  name  = var.postgres_container_name
+
+  ports {
+    internal = var.postgres_port
+    external = var.postgres_port
+  }
+
+  env = [
+    "POSTGRES_DB=${var.postgres_db}",
+    "POSTGRES_USER=${var.postgres_user}",
+    "POSTGRES_PASSWORD=${var.postgres_password}"
+  ]
+
+  volumes {
+    volume_name    = docker_volume.postgres_data.name
+    container_path = "/var/lib/postgresql/data"
+  }
+
+  restart = "unless-stopped"
 }
