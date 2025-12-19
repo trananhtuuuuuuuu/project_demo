@@ -14,7 +14,7 @@ provider "docker" {} # Allows Terraform to manage Docker resources
 
 resource "docker_image" "backend_app" { # this tells terraform know which Docker image to use
   name         = "${var.image_name}:latest" # Uses variable from terraform.tfvars file
-  keep_locally = false # Delete the image when you run terraform destroy
+  keep_locally = true # Delete the image when you run terraform destroy
 }
 
 resource "docker_container" "backend" {
@@ -26,19 +26,36 @@ resource "docker_container" "backend" {
     external = var.external_port # port on host machine
   }
 
+  networks_advanced {
+    name = docker_network.app_network.name
+  }
+
+  # This ensures DB starts before Backend
+  depends_on = [docker_container.postgres]
+
   restart = "unless-stopped" # auto-restart if container crasher
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # PostgreSQL database container deployment
-# Existing terraform and provider blocks...
-# Existing docker_image.backend_app resource...
-# Existing docker_container.backend resource...
 
 # PostgreSQL Image
 resource "docker_image" "postgres" {
   name         = var.postgres_image
-  keep_locally = false
+  keep_locally = true # don't delete images when use terraform destroy
 }
 
 # PostgreSQL Volume (for data persistence)
@@ -67,5 +84,26 @@ resource "docker_container" "postgres" {
     container_path = "/var/lib/postgresql/data"
   }
 
+  networks_advanced {
+    name = docker_network.app_network.name
+  }
+
   restart = "unless-stopped"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+# config network
+resource "docker_network" "app_network" {
+  name = "backend_db_network"
 }

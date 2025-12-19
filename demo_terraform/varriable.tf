@@ -26,10 +26,6 @@ variable "internal_port" {
 
 
 
-
-
-
-
 # Database container
 variable "postgres_container_name" {
   description = "Name of the PostgreSQL Docker container"
